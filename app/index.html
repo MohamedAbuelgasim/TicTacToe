@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tic Tac Toe · vs Computer</title>
+  <title>Tic Tac Toe</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
   <style>
@@ -38,7 +38,7 @@
     /* ── Header ── */
     header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 26px;
       animation: fadeDown .65s ease both;
     }
     .subtitle {
@@ -47,33 +47,61 @@
       color: var(--sepia);
       text-transform: uppercase;
       margin-bottom: 8px;
+      min-height: 16px;
+      transition: opacity .3s;
     }
     h1 {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(38px, 8vw, 62px);
+      font-size: clamp(36px, 7.5vw, 58px);
       font-weight: 900;
-      line-height: .92;
+      line-height: .93;
       letter-spacing: -.02em;
     }
     h1 em { font-style: italic; color: var(--sepia); }
 
-    /* ── Difficulty ── */
+    /* ── Mode toggle ── */
+    .mode-bar {
+      display: flex;
+      gap: 2px;
+      background: var(--line);
+      border-radius: 3px;
+      padding: 2px;
+      margin-bottom: 22px;
+      animation: fadeDown .65s .06s ease both;
+    }
+    .mode-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .12em;
+      padding: 8px 18px;
+      border: none;
+      background: transparent;
+      color: var(--sepia);
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all .2s;
+      text-transform: uppercase;
+    }
+    .mode-btn.active { background: var(--ink); color: var(--cream); }
+
+    /* ── Difficulty (AI only) ── */
     .difficulty {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
       font-size: 10px;
       letter-spacing: .2em;
       color: var(--sepia);
       text-transform: uppercase;
-      animation: fadeDown .65s .07s ease both;
+      animation: fadeDown .65s .1s ease both;
+      min-height: 30px;
     }
     .diff-btn {
       font-family: 'DM Mono', monospace;
       font-size: 10px;
       letter-spacing: .15em;
-      padding: 6px 14px;
+      padding: 6px 13px;
       border: 1px solid var(--line);
       background: transparent;
       color: var(--sepia);
@@ -82,7 +110,7 @@
       text-transform: uppercase;
       transition: all .15s;
     }
-    .diff-btn.active  { border-color: var(--ink); color: var(--ink); background: rgba(26,18,9,.06); }
+    .diff-btn.active { border-color: var(--ink); color: var(--ink); background: rgba(26,18,9,.06); }
     .diff-btn:hover:not(.active) { border-color: var(--sepia); }
 
     /* ── Scores ── */
@@ -91,13 +119,13 @@
       border: 1px solid var(--line);
       border-radius: 2px;
       overflow: hidden;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
       animation: fadeDown .65s .13s ease both;
     }
     .score-block {
-      padding: 12px 28px;
+      padding: 11px 26px;
       text-align: center;
-      min-width: 88px;
+      min-width: 86px;
       transition: background .25s;
     }
     .score-block + .score-block { border-left: 1px solid var(--line); }
@@ -105,22 +133,23 @@
     .score-block.active-turn    { background: rgba(26,18,9,.04); }
     .score-label {
       font-size: 9px;
-      letter-spacing: .3em;
+      letter-spacing: .28em;
       color: var(--sepia);
       text-transform: uppercase;
       margin-bottom: 5px;
+      white-space: nowrap;
     }
     .score-num {
       font-family: 'Playfair Display', serif;
-      font-size: 30px;
+      font-size: 28px;
       font-weight: 700;
       line-height: 1;
     }
-    .score-block.you   .score-num { color: var(--red); }
-    .score-block.cpu   .score-num { color: var(--blue); }
-    .score-block.draws .score-num { color: var(--sepia); }
+    .score-block.x-side .score-num { color: var(--red); }
+    .score-block.o-side .score-num { color: var(--blue); }
+    .score-block.draws  .score-num { color: var(--sepia); }
 
-    /* ── Thinking ── */
+    /* ── Thinking indicator ── */
     .thinking {
       display: none;
       align-items: center;
@@ -132,7 +161,7 @@
       min-height: 20px;
       margin-bottom: 4px;
     }
-    .thinking.visible { display: flex; }
+    .thinking.show { display: flex; }
     .dot {
       width: 4px; height: 4px;
       border-radius: 50%;
@@ -158,17 +187,17 @@
       animation: fadeDown .65s .17s ease both;
       transition: color .25s;
     }
-    .status.win-you { color: var(--red); }
-    .status.win-cpu { color: var(--blue); }
+    .status.win-x { color: var(--red); }
+    .status.win-o { color: var(--blue); }
 
     /* ── Board ── */
     .board-wrap {
       position: relative;
-      animation: fadeDown .65s .22s ease both;
+      animation: fadeDown .65s .21s ease both;
     }
     .board {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3,1fr);
     }
     .grid-svg {
       position: absolute;
@@ -176,8 +205,8 @@
       pointer-events: none;
     }
     .cell {
-      width: clamp(88px, 22vw, 128px);
-      height: clamp(88px, 22vw, 128px);
+      width: clamp(88px,22vw,126px);
+      height: clamp(88px,22vw,126px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -191,7 +220,7 @@
       transform: scale(.4) rotate(-8deg);
       transition: opacity .22s, transform .22s cubic-bezier(.34,1.56,.64,1);
       font-family: 'Playfair Display', serif;
-      font-size: clamp(42px, 11vw, 66px);
+      font-size: clamp(42px,11vw,64px);
       font-weight: 900;
       line-height: 1;
       user-select: none;
@@ -217,12 +246,10 @@
     .cell.winner.o::after { background: rgba(26,58,92,.08); }
     @keyframes winBg { from { opacity: 0; } to { opacity: 1; } }
 
-    /* Win line */
+    /* win line */
     .win-line-svg {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 10;
+      position: absolute; inset: 0;
+      pointer-events: none; z-index: 10;
     }
     @keyframes drawLine { to { stroke-dashoffset: 0; } }
 
@@ -230,7 +257,7 @@
     .controls {
       display: flex;
       gap: 10px;
-      margin-top: 26px;
+      margin-top: 24px;
       animation: fadeDown .65s .27s ease both;
     }
     .btn {
@@ -238,7 +265,7 @@
       font-size: 11px;
       letter-spacing: .18em;
       text-transform: uppercase;
-      padding: 10px 22px;
+      padding: 10px 20px;
       border: 1px solid var(--ink);
       background: transparent;
       color: var(--ink);
@@ -246,13 +273,13 @@
       border-radius: 2px;
       transition: all .18s;
     }
-    .btn:hover    { background: var(--ink); color: var(--cream); }
-    .btn.primary  { background: var(--ink); color: var(--cream); }
+    .btn:hover   { background: var(--ink); color: var(--cream); }
+    .btn.primary { background: var(--ink); color: var(--cream); }
     .btn.primary:hover { background: #2d2010; }
 
     /* ── Footer ── */
     footer {
-      margin-top: 28px;
+      margin-top: 26px;
       font-size: 10px;
       letter-spacing: .2em;
       color: rgba(139,111,71,.4);
@@ -269,41 +296,51 @@
 <body>
 
 <header>
-  <div class="subtitle">You vs Computer</div>
+  <div class="subtitle" id="subtitle">Two Players</div>
   <h1>Tic <em>Tac</em> Toe</h1>
 </header>
 
-<div class="difficulty">
+<!-- Mode toggle -->
+<div class="mode-bar">
+  <button class="mode-btn active" id="m2p" onclick="setMode('2p')">Two Players</button>
+  <button class="mode-btn"        id="mAi" onclick="setMode('ai')">Vs Computer</button>
+</div>
+
+<!-- Difficulty (AI only) -->
+<div class="difficulty" id="diffRow" style="visibility:hidden">
   <span>Level:</span>
   <button class="diff-btn active" id="dEasy"   onclick="setDiff('easy')">Easy</button>
   <button class="diff-btn"        id="dMedium" onclick="setDiff('medium')">Medium</button>
   <button class="diff-btn"        id="dHard"   onclick="setDiff('hard')">Hard</button>
 </div>
 
+<!-- Scores -->
 <div class="scores">
-  <div class="score-block you" id="scoreYou">
-    <div class="score-label">You (X)</div>
-    <div class="score-num" id="numYou">0</div>
+  <div class="score-block x-side" id="sX">
+    <div class="score-label" id="lblX">Player X</div>
+    <div class="score-num"   id="numX">0</div>
   </div>
   <div class="score-block draws">
     <div class="score-label">Draws</div>
-    <div class="score-num" id="numD">0</div>
+    <div class="score-num"  id="numD">0</div>
   </div>
-  <div class="score-block cpu" id="scoreCpu">
-    <div class="score-label">Computer</div>
-    <div class="score-num" id="numCpu">0</div>
+  <div class="score-block o-side" id="sO">
+    <div class="score-label" id="lblO">Player O</div>
+    <div class="score-num"   id="numO">0</div>
   </div>
 </div>
 
-<div class="thinking" id="thinkingEl">
+<!-- Thinking -->
+<div class="thinking" id="thinkEl">
   Thinking <div class="dot"></div><div class="dot"></div><div class="dot"></div>
 </div>
 
-<div class="status" id="status">Your turn</div>
+<!-- Status -->
+<div class="status" id="status">Player X's turn</div>
 
+<!-- Board -->
 <div class="board-wrap">
   <div class="board" id="board"></div>
-
   <svg class="grid-svg" viewBox="0 0 384 384" xmlns="http://www.w3.org/2000/svg">
     <line x1="128" y1="8"   x2="128" y2="376" stroke="#1a1209" stroke-width="1.5" stroke-opacity=".16"/>
     <line x1="256" y1="8"   x2="256" y2="376" stroke="#1a1209" stroke-width="1.5" stroke-opacity=".16"/>
@@ -312,256 +349,269 @@
   </svg>
 </div>
 
+<!-- Controls -->
 <div class="controls">
   <button class="btn primary" onclick="newGame()">New Game</button>
-  <button class="btn"         onclick="resetScores()">Reset Scores</button>
+  <button class="btn"         onclick="resetAll()">Reset Scores</button>
 </div>
 
-<footer>Play against the computer · No account needed</footer>
+<footer id="footer">Pass &amp; play · No account needed</footer>
 
 <script>
-  // ── Constants ───────────────────────────────────────────────
-  const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+// ── Win combos ───────────────────────────────────────────────
+const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
-  // ── State ───────────────────────────────────────────────────
-  let board      = Array(9).fill(null);
-  let gameOver   = false;
-  let playerTurn = true;       // true = human (X), false = cpu (O)
-  let difficulty = 'easy';
-  let scores     = { you: 0, cpu: 0, d: 0 };
+// ── State ────────────────────────────────────────────────────
+let mode       = '2p';
+let diff       = 'easy';
+let board      = Array(9).fill(null);
+let current    = 'X';   // whose turn: 'X' | 'O'
+let over       = false;
+let scores     = { X:0, O:0, D:0 };
 
-  // ── Boot ────────────────────────────────────────────────────
-  buildBoard();
+// ── Init ─────────────────────────────────────────────────────
+buildBoard();
 
-  function buildBoard() {
-    const el = document.getElementById('board');
-    el.innerHTML = '';
-    for (let i = 0; i < 9; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.i = i;
-      cell.innerHTML = '<span class="mark"></span>';
-      cell.addEventListener('click', () => onCellClick(i));
-      el.appendChild(cell);
-    }
-    document.querySelectorAll('.win-line-svg').forEach(e => e.remove());
-    board      = Array(9).fill(null);
-    gameOver   = false;
-    playerTurn = true;
-    setStatus('Your turn');
-    highlight('you');
+function buildBoard() {
+  const el = document.getElementById('board');
+  el.innerHTML = '';
+  document.querySelectorAll('.win-line-svg').forEach(e => e.remove());
+  board   = Array(9).fill(null);
+  current = 'X';
+  over    = false;
+  document.getElementById('thinkEl').classList.remove('show');
+
+  for (let i = 0; i < 9; i++) {
+    const c = document.createElement('div');
+    c.className = 'cell';
+    c.dataset.i = i;
+    c.innerHTML = '<span class="mark"></span>';
+    c.addEventListener('click', () => onCell(i));
+    el.appendChild(c);
   }
+  refreshStatus();
+  refreshHighlight();
+}
 
-  // ── Human click ─────────────────────────────────────────────
-  function onCellClick(i) {
-    if (gameOver || !playerTurn || board[i]) return;
-    place(i, 'X');
-    if (!gameOver) scheduleCPU();
+// ── Click ────────────────────────────────────────────────────
+function onCell(i) {
+  if (over || board[i]) return;
+  if (mode === 'ai' && current === 'O') return; // CPU's turn
+  doPlace(i, current);
+  if (!over && mode === 'ai' && current === 'O') scheduleCPU();
+}
+
+// ── Place ────────────────────────────────────────────────────
+function doPlace(i, mark) {
+  board[i] = mark;
+  const cell = document.querySelector(`.cell[data-i="${i}"]`);
+  cell.classList.add(mark.toLowerCase(), 'placed', 'taken');
+  cell.querySelector('.mark').textContent = mark;
+
+  const win = findWin();
+  if (win) {
+    endGame(mark, win);
+  } else if (board.every(Boolean)) {
+    endGame(null, null);
+  } else {
+    current = mark === 'X' ? 'O' : 'X';
+    refreshStatus();
+    refreshHighlight();
   }
+}
 
-  // ── Place a mark ────────────────────────────────────────────
-  function place(i, mark) {
-    board[i] = mark;
-    const cell = document.querySelector(`.cell[data-i="${i}"]`);
-    cell.classList.add(mark.toLowerCase(), 'placed', 'taken');
-    cell.querySelector('.mark').textContent = mark;
+// ── End ──────────────────────────────────────────────────────
+function endGame(winner, combo) {
+  over = true;
+  document.getElementById('thinkEl').classList.remove('show');
 
-    const win = getWin();
-    if (win) {
-      finishGame(mark, win);
-    } else if (board.every(Boolean)) {
-      finishGame(null, null);
-    } else {
-      playerTurn = mark === 'O'; // flip turn
-      if (!gameOver) {
-        setStatus(playerTurn ? 'Your turn' : "Computer's turn");
-        highlight(playerTurn ? 'you' : 'cpu');
-      }
-    }
+  if (winner) {
+    scores[winner]++;
+    combo.forEach(i => document.querySelector(`.cell[data-i="${i}"]`).classList.add('winner'));
+    drawLine(combo, winner);
+    const label = winLabel(winner);
+    setStatus(`${label} wins!`, `win-${winner.toLowerCase()}`);
+  } else {
+    scores.D++;
+    setStatus("It's a draw!");
   }
+  refreshScoreNums();
+}
 
-  // ── CPU ─────────────────────────────────────────────────────
-  function scheduleCPU() {
-    playerTurn = false;
-    setStatus("Computer's turn");
-    highlight('cpu');
-    const thk = document.getElementById('thinkingEl');
-    thk.classList.add('visible');
-    const delay = difficulty === 'easy' ? 450 : difficulty === 'medium' ? 650 : 750;
-    setTimeout(() => {
-      thk.classList.remove('visible');
-      if (!gameOver) place(cpuMove(), 'O');
-    }, delay);
+function winLabel(mark) {
+  if (mode === '2p') return `Player ${mark}`;
+  return mark === 'X' ? 'You' : 'Computer';
+}
+
+// ── AI ───────────────────────────────────────────────────────
+function scheduleCPU() {
+  document.getElementById('thinkEl').classList.add('show');
+  setStatus("Computer's thinking…");
+  const ms = diff === 'easy' ? 450 : diff === 'medium' ? 620 : 750;
+  setTimeout(() => {
+    document.getElementById('thinkEl').classList.remove('show');
+    if (!over) doPlace(cpuPick(), 'O');
+  }, ms);
+}
+
+function cpuPick() {
+  if (diff === 'easy')   return Math.random() < .25 ? (bestMove() ?? rnd()) : rnd();
+  if (diff === 'medium') return winMove('O') ?? winMove('X') ?? rnd();
+  return bestMove();
+}
+
+function rnd() {
+  const e = board.map((v,i) => v===null ? i : -1).filter(i => i >= 0);
+  return e[Math.floor(Math.random() * e.length)];
+}
+
+function winMove(p) {
+  for (const [a,b,c] of WINS) {
+    const v = [board[a],board[b],board[c]], idx = [a,b,c];
+    if (v.filter(x=>x===p).length===2 && v.includes(null))
+      return idx[v.indexOf(null)];
   }
+  return null;
+}
 
-  function cpuMove() {
-    if (difficulty === 'easy')   return easyMove();
-    if (difficulty === 'medium') return mediumMove();
-    return bestMove();                      // hard = minimax
+function bestMove() {
+  let best = -Infinity, move = null;
+  for (let i = 0; i < 9; i++) {
+    if (board[i]) continue;
+    board[i] = 'O';
+    const s = minimax(0, false, -Infinity, Infinity);
+    board[i] = null;
+    if (s > best) { best = s; move = i; }
   }
+  return move;
+}
 
-  function easyMove() {
-    return Math.random() < .25 ? (bestMove() ?? randomMove()) : randomMove();
-  }
-
-  function mediumMove() {
-    return winMove('O') ?? winMove('X') ?? randomMove();
-  }
-
-  function randomMove() {
-    const empty = board.map((v,i) => v===null ? i : -1).filter(i => i >= 0);
-    return empty[Math.floor(Math.random() * empty.length)];
-  }
-
-  function winMove(p) {
-    for (const [a,b,c] of WINS) {
-      const vals = [board[a],board[b],board[c]];
-      const idxs = [a,b,c];
-      if (vals.filter(v=>v===p).length===2 && vals.includes(null))
-        return idxs[vals.indexOf(null)];
-    }
-    return null;
-  }
-
-  function bestMove() {
-    let best = -Infinity, move = null;
+function minimax(depth, isMax, alpha, beta) {
+  const w = scanWin();
+  if (w === 'O') return 10 - depth;
+  if (w === 'X') return depth - 10;
+  if (board.every(Boolean)) return 0;
+  if (isMax) {
+    let v = -Infinity;
     for (let i = 0; i < 9; i++) {
       if (board[i]) continue;
       board[i] = 'O';
-      const s = minimax(0, false, -Infinity, Infinity);
+      v = Math.max(v, minimax(depth+1, false, alpha, beta));
       board[i] = null;
-      if (s > best) { best = s; move = i; }
+      if ((alpha = Math.max(alpha, v)) >= beta) break;
     }
-    return move;
-  }
-
-  function minimax(depth, isMax, alpha, beta) {
-    const w = getWinFor();
-    if (w === 'O') return 10 - depth;
-    if (w === 'X') return depth - 10;
-    if (board.every(Boolean)) return 0;
-    if (isMax) {
-      let v = -Infinity;
-      for (let i = 0; i < 9; i++) {
-        if (board[i]) continue;
-        board[i] = 'O';
-        v = Math.max(v, minimax(depth+1, false, alpha, beta));
-        board[i] = null;
-        alpha = Math.max(alpha, v);
-        if (beta <= alpha) break;
-      }
-      return v;
-    } else {
-      let v = Infinity;
-      for (let i = 0; i < 9; i++) {
-        if (board[i]) continue;
-        board[i] = 'X';
-        v = Math.min(v, minimax(depth+1, true, alpha, beta));
-        board[i] = null;
-        beta = Math.min(beta, v);
-        if (beta <= alpha) break;
-      }
-      return v;
+    return v;
+  } else {
+    let v = Infinity;
+    for (let i = 0; i < 9; i++) {
+      if (board[i]) continue;
+      board[i] = 'X';
+      v = Math.min(v, minimax(depth+1, true, alpha, beta));
+      board[i] = null;
+      if ((beta = Math.min(beta, v)) <= alpha) break;
     }
+    return v;
   }
+}
 
-  // ── Win helpers ─────────────────────────────────────────────
-  function getWin() {
-    for (const [a,b,c] of WINS)
-      if (board[a] && board[a]===board[b] && board[a]===board[c]) return [a,b,c];
-    return null;
+// ── Win helpers ──────────────────────────────────────────────
+function findWin() {
+  for (const [a,b,c] of WINS)
+    if (board[a] && board[a]===board[b] && board[a]===board[c]) return [a,b,c];
+  return null;
+}
+function scanWin() {
+  for (const [a,b,c] of WINS)
+    if (board[a] && board[a]===board[b] && board[a]===board[c]) return board[a];
+  return null;
+}
+
+// ── Win line ─────────────────────────────────────────────────
+function drawLine(combo, winner) {
+  const size = document.querySelector('.cell').offsetWidth;
+  const half = size / 2;
+  const pts  = combo.map(i => ({ x:(i%3)*size+half, y:Math.floor(i/3)*size+half }));
+  const color = winner === 'X' ? '#c0392b' : '#1a3a5c';
+  const dx = pts[2].x-pts[0].x, dy = pts[2].y-pts[0].y;
+  const len = Math.sqrt(dx*dx+dy*dy), pad = 16;
+  const ux = dx/len, uy = dy/len;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','win-line-svg');
+  svg.setAttribute('viewBox',`0 0 ${size*3} ${size*3}`);
+  svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:10;';
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1', pts[0].x-ux*pad); line.setAttribute('y1', pts[0].y-uy*pad);
+  line.setAttribute('x2', pts[2].x+ux*pad); line.setAttribute('y2', pts[2].y+uy*pad);
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width','3.5');
+  line.setAttribute('stroke-linecap','round');
+  line.setAttribute('stroke-dasharray','600');
+  line.setAttribute('stroke-dashoffset','600');
+  line.style.animation = 'drawLine .45s .06s cubic-bezier(.4,0,.2,1) forwards';
+  svg.appendChild(line);
+  document.querySelector('.board-wrap').appendChild(svg);
+}
+
+// ── UI helpers ───────────────────────────────────────────────
+function setStatus(msg, cls) {
+  const el = document.getElementById('status');
+  el.className = 'status' + (cls ? ' '+cls : '');
+  el.textContent = msg;
+}
+
+function refreshStatus() {
+  if (over) return;
+  if (mode === '2p') {
+    setStatus(`Player ${current}'s turn`);
+  } else {
+    setStatus(current === 'X' ? 'Your turn' : "Computer's turn");
   }
+}
 
-  function getWinFor() {
-    for (const [a,b,c] of WINS)
-      if (board[a] && board[a]===board[b] && board[a]===board[c]) return board[a];
-    return null;
-  }
+function refreshHighlight() {
+  document.getElementById('sX').classList.toggle('active-turn', current==='X' && !over);
+  document.getElementById('sO').classList.toggle('active-turn', current==='O' && !over);
+}
 
-  // ── End game ─────────────────────────────────────────────────
-  function finishGame(winner, combo) {
-    gameOver = true;
-    document.getElementById('thinkingEl').classList.remove('visible');
-    if (winner) {
-      const isYou = winner === 'X';
-      if (isYou) scores.you++; else scores.cpu++;
-      combo.forEach(i => document.querySelector(`.cell[data-i="${i}"]`).classList.add('winner'));
-      drawWinLine(combo, winner);
-      setStatus(isYou ? 'You win! 🎉' : 'Computer wins!', isYou ? 'win-you' : 'win-cpu');
-    } else {
-      scores.d++;
-      setStatus("It's a draw!");
-    }
-    updateScores();
-  }
+function refreshScoreNums() {
+  document.getElementById('numX').textContent = scores.X;
+  document.getElementById('numO').textContent = scores.O;
+  document.getElementById('numD').textContent = scores.D;
+}
 
-  // ── Win line ─────────────────────────────────────────────────
-  function drawWinLine(combo, winner) {
-    const size = document.querySelector('.cell').offsetWidth;
-    const half = size / 2;
-    const total = size * 3;
-    const pts = combo.map(i => ({ x: (i%3)*size+half, y: Math.floor(i/3)*size+half }));
-    const color = winner === 'X' ? '#c0392b' : '#1a3a5c';
-    const dx = pts[2].x-pts[0].x, dy = pts[2].y-pts[0].y;
-    const len = Math.sqrt(dx*dx+dy*dy);
-    const pad = 16;
-    const ux = dx/len, uy = dy/len;
+function refreshLabels() {
+  const is2p = mode === '2p';
+  document.getElementById('lblX').textContent = is2p ? 'Player X' : 'You (X)';
+  document.getElementById('lblO').textContent = is2p ? 'Player O' : 'Computer';
+  document.getElementById('subtitle').textContent = is2p ? 'Two Players' : 'vs Computer';
+  document.getElementById('footer').innerHTML = is2p
+    ? 'Pass &amp; play · No account needed'
+    : 'Play against the computer · No account needed';
+}
 
-    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-    svg.setAttribute('class','win-line-svg');
-    svg.setAttribute('viewBox',`0 0 ${total} ${total}`);
-    svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:10;';
+// ── Mode & difficulty ────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('m2p').classList.toggle('active', m==='2p');
+  document.getElementById('mAi').classList.toggle('active', m==='ai');
+  document.getElementById('diffRow').style.visibility = m==='ai' ? 'visible' : 'hidden';
+  refreshLabels();
+  resetAll();
+}
 
-    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1', pts[0].x - ux*pad);
-    line.setAttribute('y1', pts[0].y - uy*pad);
-    line.setAttribute('x2', pts[2].x + ux*pad);
-    line.setAttribute('y2', pts[2].y + uy*pad);
-    line.setAttribute('stroke', color);
-    line.setAttribute('stroke-width','3.5');
-    line.setAttribute('stroke-linecap','round');
-    line.setAttribute('stroke-dasharray','600');
-    line.setAttribute('stroke-dashoffset','600');
-    line.style.animation = 'drawLine .45s .06s cubic-bezier(.4,0,.2,1) forwards';
+function setDiff(d) {
+  diff = d;
+  ['Easy','Medium','Hard'].forEach(n => {
+    document.getElementById('d'+n).classList.toggle('active', n.toLowerCase()===d);
+  });
+  resetAll();
+}
 
-    svg.appendChild(line);
-    document.querySelector('.board-wrap').appendChild(svg);
-  }
-
-  // ── UI helpers ───────────────────────────────────────────────
-  function setStatus(msg, cls) {
-    const el = document.getElementById('status');
-    el.className = 'status' + (cls ? ' ' + cls : '');
-    el.textContent = msg;
-  }
-
-  function highlight(side) {
-    document.getElementById('scoreYou').classList.toggle('active-turn', side==='you');
-    document.getElementById('scoreCpu').classList.toggle('active-turn', side==='cpu');
-  }
-
-  function updateScores() {
-    document.getElementById('numYou').textContent = scores.you;
-    document.getElementById('numCpu').textContent = scores.cpu;
-    document.getElementById('numD').textContent   = scores.d;
-  }
-
-  // ── Controls ─────────────────────────────────────────────────
-  function newGame()     { buildBoard(); }
-
-  function resetScores() {
-    scores = { you: 0, cpu: 0, d: 0 };
-    updateScores();
-    buildBoard();
-  }
-
-  function setDiff(d) {
-    difficulty = d;
-    ['Easy','Medium','Hard'].forEach(n => {
-      document.getElementById('d'+n).classList.toggle('active', n.toLowerCase()===d);
-    });
-    resetScores();
-  }
+// ── Controls ─────────────────────────────────────────────────
+function newGame()  { buildBoard(); }
+function resetAll() { scores={X:0,O:0,D:0}; refreshScoreNums(); buildBoard(); }
 </script>
 </body>
 </html>

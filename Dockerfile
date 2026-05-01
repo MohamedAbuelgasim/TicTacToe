@@ -1,12 +1,8 @@
 FROM nginx:1.27-alpine
 
-# Remove default nginx content
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy game
-COPY app/ /usr/share/nginx/html/
-
-# Copy Render-compatible nginx config (port 10000)
+COPY app/     /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 10000
