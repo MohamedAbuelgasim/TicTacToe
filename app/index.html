@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic Tac Toe · vs Computer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream:  #f5f0e8;
+      --paper:  #ede8dc;
+      --ink:    #1a1209;
+      --sepia:  #8b6f47;
+      --red:    #c0392b;
+      --blue:   #1a3a5c;
+      --line:   rgba(26,18,9,0.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--cream);
+      background-image:
+        radial-gradient(ellipse at 20% 10%, rgba(139,111,71,0.09) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 90%, rgba(139,111,71,0.06) 0%, transparent 50%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+      font-family: 'DM Mono', monospace;
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+      animation: fadeDown .65s ease both;
+    }
+    .subtitle {
+      font-size: 10px;
+      letter-spacing: .4em;
+      color: var(--sepia);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(38px, 8vw, 62px);
+      font-weight: 900;
+      line-height: .92;
+      letter-spacing: -.02em;
+    }
+    h1 em { font-style: italic; color: var(--sepia); }
+
+    /* ── Difficulty ── */
+    .difficulty {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 10px;
+      letter-spacing: .2em;
+      color: var(--sepia);
+      text-transform: uppercase;
+      animation: fadeDown .65s .07s ease both;
+    }
+    .diff-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: .15em;
+      padding: 6px 14px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--sepia);
+      cursor: pointer;
+      border-radius: 2px;
+      text-transform: uppercase;
+      transition: all .15s;
+    }
+    .diff-btn.active  { border-color: var(--ink); color: var(--ink); background: rgba(26,18,9,.06); }
+    .diff-btn:hover:not(.active) { border-color: var(--sepia); }
+
+    /* ── Scores ── */
+    .scores {
+      display: flex;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      animation: fadeDown .65s .13s ease both;
+    }
+    .score-block {
+      padding: 12px 28px;
+      text-align: center;
+      min-width: 88px;
+      transition: background .25s;
+    }
+    .score-block + .score-block { border-left: 1px solid var(--line); }
+    .score-block.draws          { background: var(--paper); }
+    .score-block.active-turn    { background: rgba(26,18,9,.04); }
+    .score-label {
+      font-size: 9px;
+      letter-spacing: .3em;
+      color: var(--sepia);
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .score-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .score-block.you   .score-num { color: var(--red); }
+    .score-block.cpu   .score-num { color: var(--blue); }
+    .score-block.draws .score-num { color: var(--sepia); }
+
+    /* ── Thinking ── */
+    .thinking {
+      display: none;
+      align-items: center;
+      gap: 7px;
+      font-size: 10px;
+      letter-spacing: .2em;
+      color: var(--sepia);
+      text-transform: uppercase;
+      min-height: 20px;
+      margin-bottom: 4px;
+    }
+    .thinking.visible { display: flex; }
+    .dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--sepia);
+      animation: bounce 1.1s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: .18s; }
+    .dot:nth-child(3) { animation-delay: .36s; }
+    @keyframes bounce {
+      0%,80%,100% { transform: translateY(0); opacity: .35; }
+      40%          { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* ── Status ── */
+    .status {
+      font-size: 12px;
+      letter-spacing: .2em;
+      color: var(--sepia);
+      text-transform: uppercase;
+      min-height: 18px;
+      margin-bottom: 18px;
+      text-align: center;
+      animation: fadeDown .65s .17s ease both;
+      transition: color .25s;
+    }
+    .status.win-you { color: var(--red); }
+    .status.win-cpu { color: var(--blue); }
+
+    /* ── Board ── */
+    .board-wrap {
+      position: relative;
+      animation: fadeDown .65s .22s ease both;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .grid-svg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .cell {
+      width: clamp(88px, 22vw, 128px);
+      height: clamp(88px, 22vw, 128px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: background .15s;
+    }
+    .cell:hover:not(.taken) { background: rgba(26,18,9,.03); }
+    .cell .mark {
+      opacity: 0;
+      transform: scale(.4) rotate(-8deg);
+      transition: opacity .22s, transform .22s cubic-bezier(.34,1.56,.64,1);
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(42px, 11vw, 66px);
+      font-weight: 900;
+      line-height: 1;
+      user-select: none;
+    }
+    .cell.x .mark { color: var(--red); }
+    .cell.o .mark { color: var(--blue); }
+    .cell.placed .mark { opacity: 1; transform: scale(1) rotate(0deg); }
+
+    .cell.winner .mark { animation: winPop .4s cubic-bezier(.34,1.56,.64,1) both; }
+    @keyframes winPop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.22) rotate(4deg); }
+      100% { transform: scale(1.08); }
+    }
+    .cell.winner::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 2px;
+      animation: winBg .3s ease both;
+    }
+    .cell.winner.x::after { background: rgba(192,57,43,.08); }
+    .cell.winner.o::after { background: rgba(26,58,92,.08); }
+    @keyframes winBg { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Win line */
+    .win-line-svg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 26px;
+      animation: fadeDown .65s .27s ease both;
+    }
+    .btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      padding: 10px 22px;
+      border: 1px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all .18s;
+    }
+    .btn:hover    { background: var(--ink); color: var(--cream); }
+    .btn.primary  { background: var(--ink); color: var(--cream); }
+    .btn.primary:hover { background: #2d2010; }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 28px;
+      font-size: 10px;
+      letter-spacing: .2em;
+      color: rgba(139,111,71,.4);
+      text-transform: uppercase;
+      animation: fadeDown .65s .32s ease both;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="subtitle">You vs Computer</div>
+  <h1>Tic <em>Tac</em> Toe</h1>
+</header>
+
+<div class="difficulty">
+  <span>Level:</span>
+  <button class="diff-btn active" id="dEasy"   onclick="setDiff('easy')">Easy</button>
+  <button class="diff-btn"        id="dMedium" onclick="setDiff('medium')">Medium</button>
+  <button class="diff-btn"        id="dHard"   onclick="setDiff('hard')">Hard</button>
+</div>
+
+<div class="scores">
+  <div class="score-block you" id="scoreYou">
+    <div class="score-label">You (X)</div>
+    <div class="score-num" id="numYou">0</div>
+  </div>
+  <div class="score-block draws">
+    <div class="score-label">Draws</div>
+    <div class="score-num" id="numD">0</div>
+  </div>
+  <div class="score-block cpu" id="scoreCpu">
+    <div class="score-label">Computer</div>
+    <div class="score-num" id="numCpu">0</div>
+  </div>
+</div>
+
+<div class="thinking" id="thinkingEl">
+  Thinking <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+</div>
+
+<div class="status" id="status">Your turn</div>
+
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+
+  <svg class="grid-svg" viewBox="0 0 384 384" xmlns="http://www.w3.org/2000/svg">
+    <line x1="128" y1="8"   x2="128" y2="376" stroke="#1a1209" stroke-width="1.5" stroke-opacity=".16"/>
+    <line x1="256" y1="8"   x2="256" y2="376" stroke="#1a1209" stroke-width="1.5" stroke-opacity=".16"/>
+    <line x1="8"   y1="128" x2="376" y2="128" stroke="#1a1209" stroke-width="1.5" stroke-opacity=".16"/>
+    <line x1="8"   y1="256" x2="376" y2="256" stroke="#1a1209" stroke-width="1.5" stroke-opacity=".16"/>
+  </svg>
+</div>
+
+<div class="controls">
+  <button class="btn primary" onclick="newGame()">New Game</button>
+  <button class="btn"         onclick="resetScores()">Reset Scores</button>
+</div>
+
+<footer>Play against the computer · No account needed</footer>
+
+<script>
+  // ── Constants ───────────────────────────────────────────────
+  const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  // ── State ───────────────────────────────────────────────────
+  let board      = Array(9).fill(null);
+  let gameOver   = false;
+  let playerTurn = true;       // true = human (X), false = cpu (O)
+  let difficulty = 'easy';
+  let scores     = { you: 0, cpu: 0, d: 0 };
+
+  // ── Boot ────────────────────────────────────────────────────
+  buildBoard();
+
+  function buildBoard() {
+    const el = document.getElementById('board');
+    el.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.i = i;
+      cell.innerHTML = '<span class="mark"></span>';
+      cell.addEventListener('click', () => onCellClick(i));
+      el.appendChild(cell);
+    }
+    document.querySelectorAll('.win-line-svg').forEach(e => e.remove());
+    board      = Array(9).fill(null);
+    gameOver   = false;
+    playerTurn = true;
+    setStatus('Your turn');
+    highlight('you');
+  }
+
+  // ── Human click ─────────────────────────────────────────────
+  function onCellClick(i) {
+    if (gameOver || !playerTurn || board[i]) return;
+    place(i, 'X');
+    if (!gameOver) scheduleCPU();
+  }
+
+  // ── Place a mark ────────────────────────────────────────────
+  function place(i, mark) {
+    board[i] = mark;
+    const cell = document.querySelector(`.cell[data-i="${i}"]`);
+    cell.classList.add(mark.toLowerCase(), 'placed', 'taken');
+    cell.querySelector('.mark').textContent = mark;
+
+    const win = getWin();
+    if (win) {
+      finishGame(mark, win);
+    } else if (board.every(Boolean)) {
+      finishGame(null, null);
+    } else {
+      playerTurn = mark === 'O'; // flip turn
+      if (!gameOver) {
+        setStatus(playerTurn ? 'Your turn' : "Computer's turn");
+        highlight(playerTurn ? 'you' : 'cpu');
+      }
+    }
+  }
+
+  // ── CPU ─────────────────────────────────────────────────────
+  function scheduleCPU() {
+    playerTurn = false;
+    setStatus("Computer's turn");
+    highlight('cpu');
+    const thk = document.getElementById('thinkingEl');
+    thk.classList.add('visible');
+    const delay = difficulty === 'easy' ? 450 : difficulty === 'medium' ? 650 : 750;
+    setTimeout(() => {
+      thk.classList.remove('visible');
+      if (!gameOver) place(cpuMove(), 'O');
+    }, delay);
+  }
+
+  function cpuMove() {
+    if (difficulty === 'easy')   return easyMove();
+    if (difficulty === 'medium') return mediumMove();
+    return bestMove();                      // hard = minimax
+  }
+
+  function easyMove() {
+    return Math.random() < .25 ? (bestMove() ?? randomMove()) : randomMove();
+  }
+
+  function mediumMove() {
+    return winMove('O') ?? winMove('X') ?? randomMove();
+  }
+
+  function randomMove() {
+    const empty = board.map((v,i) => v===null ? i : -1).filter(i => i >= 0);
+    return empty[Math.floor(Math.random() * empty.length)];
+  }
+
+  function winMove(p) {
+    for (const [a,b,c] of WINS) {
+      const vals = [board[a],board[b],board[c]];
+      const idxs = [a,b,c];
+      if (vals.filter(v=>v===p).length===2 && vals.includes(null))
+        return idxs[vals.indexOf(null)];
+    }
+    return null;
+  }
+
+  function bestMove() {
+    let best = -Infinity, move = null;
+    for (let i = 0; i < 9; i++) {
+      if (board[i]) continue;
+      board[i] = 'O';
+      const s = minimax(0, false, -Infinity, Infinity);
+      board[i] = null;
+      if (s > best) { best = s; move = i; }
+    }
+    return move;
+  }
+
+  function minimax(depth, isMax, alpha, beta) {
+    const w = getWinFor();
+    if (w === 'O') return 10 - depth;
+    if (w === 'X') return depth - 10;
+    if (board.every(Boolean)) return 0;
+    if (isMax) {
+      let v = -Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (board[i]) continue;
+        board[i] = 'O';
+        v = Math.max(v, minimax(depth+1, false, alpha, beta));
+        board[i] = null;
+        alpha = Math.max(alpha, v);
+        if (beta <= alpha) break;
+      }
+      return v;
+    } else {
+      let v = Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (board[i]) continue;
+        board[i] = 'X';
+        v = Math.min(v, minimax(depth+1, true, alpha, beta));
+        board[i] = null;
+        beta = Math.min(beta, v);
+        if (beta <= alpha) break;
+      }
+      return v;
+    }
+  }
+
+  // ── Win helpers ─────────────────────────────────────────────
+  function getWin() {
+    for (const [a,b,c] of WINS)
+      if (board[a] && board[a]===board[b] && board[a]===board[c]) return [a,b,c];
+    return null;
+  }
+
+  function getWinFor() {
+    for (const [a,b,c] of WINS)
+      if (board[a] && board[a]===board[b] && board[a]===board[c]) return board[a];
+    return null;
+  }
+
+  // ── End game ─────────────────────────────────────────────────
+  function finishGame(winner, combo) {
+    gameOver = true;
+    document.getElementById('thinkingEl').classList.remove('visible');
+    if (winner) {
+      const isYou = winner === 'X';
+      if (isYou) scores.you++; else scores.cpu++;
+      combo.forEach(i => document.querySelector(`.cell[data-i="${i}"]`).classList.add('winner'));
+      drawWinLine(combo, winner);
+      setStatus(isYou ? 'You win! 🎉' : 'Computer wins!', isYou ? 'win-you' : 'win-cpu');
+    } else {
+      scores.d++;
+      setStatus("It's a draw!");
+    }
+    updateScores();
+  }
+
+  // ── Win line ─────────────────────────────────────────────────
+  function drawWinLine(combo, winner) {
+    const size = document.querySelector('.cell').offsetWidth;
+    const half = size / 2;
+    const total = size * 3;
+    const pts = combo.map(i => ({ x: (i%3)*size+half, y: Math.floor(i/3)*size+half }));
+    const color = winner === 'X' ? '#c0392b' : '#1a3a5c';
+    const dx = pts[2].x-pts[0].x, dy = pts[2].y-pts[0].y;
+    const len = Math.sqrt(dx*dx+dy*dy);
+    const pad = 16;
+    const ux = dx/len, uy = dy/len;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('class','win-line-svg');
+    svg.setAttribute('viewBox',`0 0 ${total} ${total}`);
+    svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:10;';
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', pts[0].x - ux*pad);
+    line.setAttribute('y1', pts[0].y - uy*pad);
+    line.setAttribute('x2', pts[2].x + ux*pad);
+    line.setAttribute('y2', pts[2].y + uy*pad);
+    line.setAttribute('stroke', color);
+    line.setAttribute('stroke-width','3.5');
+    line.setAttribute('stroke-linecap','round');
+    line.setAttribute('stroke-dasharray','600');
+    line.setAttribute('stroke-dashoffset','600');
+    line.style.animation = 'drawLine .45s .06s cubic-bezier(.4,0,.2,1) forwards';
+
+    svg.appendChild(line);
+    document.querySelector('.board-wrap').appendChild(svg);
+  }
+
+  // ── UI helpers ───────────────────────────────────────────────
+  function setStatus(msg, cls) {
+    const el = document.getElementById('status');
+    el.className = 'status' + (cls ? ' ' + cls : '');
+    el.textContent = msg;
+  }
+
+  function highlight(side) {
+    document.getElementById('scoreYou').classList.toggle('active-turn', side==='you');
+    document.getElementById('scoreCpu').classList.toggle('active-turn', side==='cpu');
+  }
+
+  function updateScores() {
+    document.getElementById('numYou').textContent = scores.you;
+    document.getElementById('numCpu').textContent = scores.cpu;
+    document.getElementById('numD').textContent   = scores.d;
+  }
+
+  // ── Controls ─────────────────────────────────────────────────
+  function newGame()     { buildBoard(); }
+
+  function resetScores() {
+    scores = { you: 0, cpu: 0, d: 0 };
+    updateScores();
+    buildBoard();
+  }
+
+  function setDiff(d) {
+    difficulty = d;
+    ['Easy','Medium','Hard'].forEach(n => {
+      document.getElementById('d'+n).classList.toggle('active', n.toLowerCase()===d);
+    });
+    resetScores();
+  }
+</script>
+</body>
+</html>
